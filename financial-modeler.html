@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Equity Research Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --gold: #c8b97a;
+    --gold-dim: rgba(200,185,122,0.35);
+    --gold-faint: rgba(200,185,122,0.08);
+    --bg: #0d0c0a;
+    --bg2: #131210;
+    --text: #e8dcc0;
+    --text-dim: #8a7a60;
+    --green: #4ec882;
+    --green-dim: rgba(78,200,130,0.15);
+    --red: #e05555;
+    --red-dim: rgba(220,80,80,0.12);
+    --border: rgba(200,185,122,0.12);
+    --radius: 3px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', 'Courier New', monospace;
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+    background-image:
+      radial-gradient(ellipse at 15% 0%, rgba(200,185,122,0.05) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 100%, rgba(120,100,50,0.07) 0%, transparent 55%);
+  }
+  .wrap { max-width: 740px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .header { margin-bottom: 2.5rem; animation: fadeUp .5s ease both; }
+  .eyebrow {
+    display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem;
+  }
+  .eyebrow-line { width: 2px; height: 26px; background: linear-gradient(to bottom, var(--gold), transparent); }
+  .eyebrow-text { font-size: .55rem; letter-spacing: .28em; color: var(--gold); text-transform: uppercase; }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 900; line-height: 1.05;
+    color: #f0e8d0; letter-spacing: -.02em;
+  }
+  h1 span {
+    background: linear-gradient(90deg, var(--gold), #a08040);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .tagline { color: rgba(200,185,122,.4); font-size: .65rem; margin-top: .5rem; letter-spacing: .04em; }
+
+  /* ── API Key Banner ── */
+  #api-banner {
+    padding: .9rem 1rem; border: 1px solid rgba(200,185,122,.2);
+    border-radius: var(--radius); background: rgba(200,185,122,.04);
+    margin-bottom: 1.5rem; animation: fadeUp .5s .1s ease both;
+  }
+  .banner-title { font-size: .62rem; color: var(--gold); margin-bottom: .35rem; letter-spacing: .1em; }
+  .banner-row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+  .banner-input {
+    flex: 1; min-width: 180px; background: rgba(0,0,0,.3);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: .45rem .7rem; color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: .7rem; letter-spacing: .05em;
+  }
+  .banner-input:focus { outline: none; border-color: var(--gold-dim); }
+  .banner-input::placeholder { color: rgba(200,185,122,.25); }
+  .banner-save {
+    padding: .45rem .9rem; background: var(--gold);
+    border: none; border-radius: var(--radius); color: #0d0c0a;
+    font-family: 'DM Mono', monospace; font-size: .6rem;
+    font-weight: 500; letter-spacing: .15em; text-transform: uppercase;
+    cursor: pointer; white-space: nowrap;
+  }
+  .banner-save:hover { background: #d4c48a; }
+  .banner-hint { font-size: .55rem; color: rgba(200,185,122,.35); margin-top: .4rem; line-height: 1.6; }
+  .banner-hint a { color: var(--gold); text-decoration: none; }
+  .banner-hint a:hover { text-decoration: underline; }
+  #key-status { font-size: .58rem; color: var(--green); margin-top: .3rem; display: none; }
+
+  /* ── Controls ── */
+  .controls { animation: fadeUp .5s .15s ease both; }
+  label.field-label {
+    display: block; font-size: .52rem; letter-spacing: .2em;
+    color: var(--gold); text-transform: uppercase; margin-bottom: .4rem;
+  }
+  .ticker-row { display: flex; gap: .5rem; margin-bottom: 1.4rem; }
+  #ticker-input {
+    flex: 1; background: rgba(200,185,122,.04);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: .75rem 1rem; color: #f0e8d0;
+    font-family: 'Playfair Display', serif; font-weight: 700;
+    font-size: 1.05rem; letter-spacing: .1em; text-transform: uppercase;
+    transition: border-color .2s;
+  }
+  #ticker-input:focus { outline: none; border-color: var(--gold-dim); }
+  #ticker-input::placeholder { color: rgba(200,185,122,.25); font-size: .8rem; }
+
+  .model-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .45rem; margin-bottom: 1.5rem; }
+  .model-card {
+    padding: .85rem; border: 1px solid rgba(200,185,122,.1);
+    border-radius: var(--radius); cursor: pointer;
+    background: rgba(200,185,122,.02); transition: all .15s;
+    position: relative; overflow: hidden;
+  }
+  .model-card:hover { border-color: rgba(200,185,122,.28); }
+  .model-card.active { border-color: rgba(200,185,122,.65); background: rgba(200,185,122,.07); }
+  .model-card.active::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .model-icon { color: rgba(200,185,122,.28); font-size: .9rem; margin-right: .35rem; }
+  .model-card.active .model-icon { color: var(--gold); }
+  .model-name { font-family: 'Playfair Display', serif; font-weight: 700; font-size: .78rem; color: #6a5840; }
+  .model-card.active .model-name { color: #f0e8d0; }
+  .model-desc { font-size: .57rem; color: #2a1e0a; margin-top: .2rem; line-height: 1.4; }
+  .model-card.active .model-desc { color: rgba(200,185,122,.52); }
+
+  #run-btn {
+    width: 100%; padding: .88rem;
+    background: linear-gradient(135deg, var(--gold), #a08040);
+    border: none; border-radius: var(--radius); color: #0d0c0a;
+    font-family: 'DM Mono', monospace; font-size: .62rem;
+    font-weight: 500; letter-spacing: .22em; text-transform: uppercase;
+    cursor: pointer; transition: all .2s;
+  }
+  #run-btn:hover { background: linear-gradient(135deg, #d4c48a, #b09050); }
+  #run-btn:disabled { background: rgba(200,185,122,.1); color: rgba(200,185,122,.25); cursor: not-allowed; }
+
+  /* ── Loading ── */
+  #loading {
+    display: none; margin-top: 1.2rem; padding: 1rem 1.1rem;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: rgba(200,185,122,.03);
+  }
+  .loading-row { display: flex; align-items: center; gap: .65rem; }
+  .spinner {
+    width: 14px; height: 14px; flex-shrink: 0;
+    border: 1.5px solid rgba(200,185,122,.2);
+    border-top-color: var(--gold); border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  .loading-text { font-size: .68rem; color: var(--gold); }
+  .loading-sub { font-size: .56rem; color: rgba(200,185,122,.35); margin-top: .12rem; }
+  .progress-steps { display: flex; gap: .35rem; margin-top: .85rem; }
+  .step {
+    flex: 1; padding: .32rem .5rem;
+    border: 1px solid rgba(200,185,122,.07); border-radius: var(--radius);
+    font-size: .48rem; color: rgba(200,185,122,.2); letter-spacing: .08em; text-transform: uppercase;
+    transition: all .3s;
+  }
+  .step.active { border-color: rgba(200,185,122,.5); color: var(--gold); background: rgba(200,185,122,.07); }
+  .step.done { border-color: rgba(78,200,130,.3); color: rgba(78,200,130,.7); }
+
+  /* ── Error ── */
+  #error-box {
+    display: none; margin-top: 1rem; padding: .85rem 1rem;
+    border: 1px solid rgba(220,80,80,.28); border-radius: var(--radius);
+    background: rgba(220,80,80,.05);
+  }
+  .error-title { color: var(--red); font-size: .68rem; font-weight: 500; margin-bottom: .25rem; }
+  .error-body { color: rgba(220,80,80,.75); font-size: .6rem; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
+
+  /* ── Results ── */
+  #result { display: none; animation: fadeUp .4s ease both; }
+  .back-btn {
+    background: none; border: 1px solid rgba(200,185,122,.14);
+    border-radius: var(--radius); color: rgba(200,185,122,.45);
+    font-family: 'DM Mono', monospace; font-size: .55rem;
+    letter-spacing: .12em; text-transform: uppercase;
+    padding: .35rem .7rem; cursor: pointer; margin-bottom: 1rem;
+  }
+  .back-btn:hover { border-color: rgba(200,185,122,.3); color: rgba(200,185,122,.7); }
+
+  .result-header {
+    margin-bottom: .9rem; padding-bottom: .75rem;
+    border-bottom: 1px solid rgba(200,185,122,.1);
+  }
+  .result-label { font-size: .5rem; letter-spacing: .16em; color: rgba(200,185,122,.35); text-transform: uppercase; margin-bottom: .15rem; }
+  .result-company { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #f0e8d0; font-weight: 700; }
+  .result-sub { font-size: .52rem; color: rgba(200,185,122,.33); margin-top: .1rem; }
+
+  /* Verdict card */
+  .verdict {
+    padding: .95rem 1.1rem; border-radius: var(--radius);
+    margin-bottom: .9rem; display: flex; align-items: center;
+    justify-content: space-between; gap: .8rem; flex-wrap: wrap;
+  }
+  .verdict.up { border: 1px solid rgba(78,200,130,.3); background: rgba(78,200,130,.07); }
+  .verdict.down { border: 1px solid rgba(220,80,80,.28); background: rgba(220,80,80,.07); }
+  .verdict-lhs .vlabel { font-size: .48rem; letter-spacing: .14em; color: rgba(255,255,255,.3); text-transform: uppercase; margin-bottom: .12rem; }
+  .verdict-price { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900; }
+  .verdict.up .verdict-price { color: var(--green); }
+  .verdict.down .verdict-price { color: var(--red); }
+  .verdict-rhs { text-align: right; }
+  .verdict-vs { font-size: .48rem; color: rgba(255,255,255,.3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .1rem; }
+  .verdict-move { font-size: .95rem; font-weight: 700; }
+  .verdict.up .verdict-move { color: var(--green); }
+  .verdict.down .verdict-move { color: var(--red); }
+  .verdict-tag { font-size: .5rem; color: rgba(255,255,255,.25); margin-top: .08rem; }
+
+  /* Bear/Base/Bull */
+  .bbb { display: grid; grid-template-columns: repeat(3,1fr); gap: .38rem; margin-bottom: .9rem; }
+  .bbb-card { padding: .6rem .5rem; border-radius: var(--radius); text-align: center; }
+  .bbb-card.bear { background: rgba(220,80,80,.1); border: 1px solid rgba(220,80,80,.3); }
+  .bbb-card.base { background: rgba(200,185,122,.05); border: 1px solid rgba(200,185,122,.28); }
+  .bbb-card.bull { background: rgba(78,200,130,.07); border: 1px solid rgba(78,200,130,.28); }
+  .bbb-label { font-size: .46rem; letter-spacing: .1em; color: rgba(255,255,255,.26); text-transform: uppercase; margin-bottom: .15rem; }
+  .bbb-val { font-family: 'Playfair Display', serif; font-size: .95rem; color: #f0e8d0; font-weight: 700; }
+  .bbb-pct { font-size: .48rem; color: rgba(255,255,255,.26); margin-top: .06rem; }
+
+  /* Steps */
+  .section-label { font-size: .48rem; letter-spacing: .18em; color: rgba(200,185,122,.32); text-transform: uppercase; margin-bottom: .45rem; }
+  .steps-table { border: 1px solid rgba(200,185,122,.09); border-radius: var(--radius); overflow: hidden; margin-bottom: .9rem; }
+  .step-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .5rem .75rem; gap: .5rem;
+    border-bottom: 1px solid rgba(200,185,122,.06);
+  }
+  .step-row:last-child { border-bottom: none; }
+  .step-row:nth-child(odd) { background: rgba(200,185,122,.02); }
+  .step-lhs { flex: 1; }
+  .step-name { font-size: .58rem; color: #bdb090; }
+  .step-note { font-size: .5rem; color: rgba(200,185,122,.28); margin-top: .04rem; }
+  .step-val { font-family: 'Playfair Display', serif; font-size: .8rem; color: var(--gold); font-weight: 700; flex-shrink: 0; }
+
+  /* Metrics grid */
+  .metrics-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: .35rem; margin-bottom: .9rem; }
+  @media (max-width: 480px) { .metrics-grid { grid-template-columns: repeat(3,1fr); } }
+  .metric-card { padding: .45rem .55rem; background: rgba(200,185,122,.03); border: 1px solid rgba(200,185,122,.07); border-radius: var(--radius); }
+  .metric-label { font-size: .44rem; color: rgba(200,185,122,.3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: .1rem; }
+  .metric-val { font-size: .72rem; color: #e8dcc0; font-weight: 500; }
+
+  /* Disclaimer */
+  .disclaimer { padding: .6rem .75rem; border: 1px solid rgba(200,185,122,.06); border-radius: var(--radius); }
+  .disclaimer p { font-size: .48rem; color: rgba(200,185,122,.25); line-height: 1.7; }
+
+  .footer { margin-top: 2.5rem; font-size: .5rem; color: rgba(200,185,122,.13); letter-spacing: .1em; text-align: center; }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+  @keyframes slideIn { from { opacity:0; transform:translateX(-5px); } to { opacity:1; transform:translateX(0); } }
+  .slide { animation: slideIn .25s ease both; }
+
+  /* Data source badge */
+  .data-badge {
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-size: .5rem; letter-spacing: .1em; color: rgba(200,185,122,.4);
+    margin-bottom: .85rem;
+  }
+  .data-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .data-dot.live { background: var(--green); box-shadow: 0 0 6px rgba(78,200,130,.5); }
+  .data-dot.cached { background: var(--gold); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="eyebrow">
+      <div class="eyebrow-line"></div>
+      <span class="eyebrow-text">Equity Research Terminal</span>
+    </div>
+    <h1>Financial<br/><span>Modelling</span></h1>
+    <p class="tagline">Live data · DCF · DDM · EV/EBITDA · P/E · Any listed stock</p>
+  </div>
+
+  <!-- API Key Setup -->
+  <div id="api-banner">
+    <div class="banner-title">⚡ FINANCIAL MODELING PREP API KEY</div>
+    <div class="banner-row">
+      <input class="banner-input" id="api-key-input" type="text" placeholder="Paste your free API key here…" autocomplete="off" spellcheck="false"/>
+      <button class="banner-save" onclick="saveKey()">Save Key</button>
+    </div>
+    <div class="banner-hint">
+      Get a free key at <a href="https://financialmodelingprep.com/developer/docs" target="_blank">financialmodelingprep.com</a> → Sign up → Copy API key (takes ~30 seconds). Free tier: 250 requests/day, all endpoints included.
+    </div>
+    <div id="key-status">✓ API key saved — ready to fetch live data for any ticker</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <label class="field-label" for="ticker-input">Ticker Symbol</label>
+    <div class="ticker-row">
+      <input id="ticker-input" type="text" placeholder="AAPL · TSLA · BA · MSFT · NVDA…" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false"/>
+    </div>
+
+    <label class="field-label">Valuation Method</label>
+    <div class="model-grid">
+      <div class="model-card" data-model="dcf" onclick="selectModel(this)">
+        <div><span class="model-icon">⟳</span><span class="model-name">DCF</span></div>
+        <div class="model-desc">Intrinsic value from free cash flows</div>
+      </div>
+      <div class="model-card" data-model="ddm" onclick="selectModel(this)">
+        <div><span class="model-icon">◈</span><span class="model-name">DDM</span></div>
+        <div class="model-desc">Value from future dividend stream</div>
+      </div>
+      <div class="model-card" data-model="ev_ebitda" onclick="selectModel(this)">
+        <div><span class="model-icon">⬡</span><span class="model-name">EV/EBITDA</span></div>
+        <div class="model-desc">Peer enterprise value multiple</div>
+      </div>
+      <div class="model-card" data-model="pe" onclick="selectModel(this)">
+        <div><span class="model-icon">◎</span><span class="model-name">P/E</span></div>
+        <div class="model-desc">Relative earnings valuation</div>
+      </div>
+    </div>
+
+    <button id="run-btn" onclick="runAnalysis()" disabled>Run Analysis →</button>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="loading-row">
+      <div class="spinner"></div>
+      <div>
+        <div class="loading-text" id="loading-text">Fetching live data…</div>
+        <div class="loading-sub" id="loading-sub">Connecting to Financial Modeling Prep</div>
+      </div>
+    </div>
+    <div class="progress-steps">
+      <div class="step" id="step-1">Fetch Quote</div>
+      <div class="step" id="step-2">Fetch Fundamentals</div>
+      <div class="step" id="step-3">Run Model</div>
+      <div class="step" id="step-4">Output Results</div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="error-box">
+    <div class="error-title">Analysis Failed</div>
+    <div class="error-body" id="error-text"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="result">
+    <button class="back-btn" onclick="goBack()">← New Analysis</button>
+    <div class="data-badge">
+      <div class="data-dot" id="data-dot"></div>
+      <span id="data-source-label"></span>
+    </div>
+    <div class="result-header">
+      <div class="result-label" id="result-model-label"></div>
+      <div class="result-company" id="result-company"></div>
+      <div class="result-sub" id="result-sub"></div>
+    </div>
+    <div class="verdict" id="verdict-card">
+      <div class="verdict-lhs">
+        <div class="vlabel">Implied Base Value</div>
+        <div class="verdict-price" id="verdict-price"></div>
+      </div>
+      <div class="verdict-rhs">
+        <div class="verdict-vs" id="verdict-vs"></div>
+        <div class="verdict-move" id="verdict-move"></div>
+        <div class="verdict-tag" id="verdict-tag"></div>
+      </div>
+    </div>
+    <div class="bbb">
+      <div class="bbb-card bear">
+        <div class="bbb-label">Bear</div>
+        <div class="bbb-val" id="bbb-bear"></div>
+        <div class="bbb-pct" id="bbb-bear-pct"></div>
+      </div>
+      <div class="bbb-card base">
+        <div class="bbb-label">Base</div>
+        <div class="bbb-val" id="bbb-base"></div>
+        <div class="bbb-pct" id="bbb-base-pct"></div>
+      </div>
+      <div class="bbb-card bull">
+        <div class="bbb-label">Bull</div>
+        <div class="bbb-val" id="bbb-bull"></div>
+        <div class="bbb-pct" id="bbb-bull-pct"></div>
+      </div>
+    </div>
+    <div class="section-label">Model Calculation</div>
+    <div class="steps-table" id="steps-table"></div>
+    <div class="section-label">Live Market Data</div>
+    <div class="metrics-grid" id="metrics-grid"></div>
+    <div class="disclaimer"><p>⚠ For educational purposes only. Not financial advice. Models rely on estimates and assumptions; actual results may differ materially. Always consult a licensed financial advisor before making investment decisions.</p></div>
+  </div>
+
+  <div class="footer">EQUITY RESEARCH TERMINAL · POWERED BY FINANCIAL MODELING PREP · EDUCATIONAL USE ONLY</div>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let selectedModel = null;
+let apiKey = localStorage.getItem('fmp_api_key') || '';
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+(function init() {
+  if (apiKey) {
+    document.getElementById('api-key-input').value = apiKey;
+    document.getElementById('key-status').style.display = 'block';
+  }
+  document.getElementById('ticker-input').addEventListener('input', checkRunnable);
+  document.getElementById('ticker-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runAnalysis();
+  });
+  checkRunnable();
+})();
+
+function saveKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val) return;
+  apiKey = val;
+  localStorage.setItem('fmp_api_key', val);
+  const st = document.getElementById('key-status');
+  st.style.display = 'block';
+  st.textContent = '✓ API key saved — ready to fetch live data for any ticker';
+  checkRunnable();
+}
+
+function selectModel(el) {
+  document.querySelectorAll('.model-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedModel = el.dataset.model;
+  checkRunnable();
+}
+
+function checkRunnable() {
+  const t = document.getElementById('ticker-input').value.trim();
+  document.getElementById('run-btn').disabled = !(t.length > 0 && selectedModel && apiKey);
+}
+
+function goBack() {
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('controls').style.display = 'none'; // won't exist but harmless
+  document.querySelector('.controls').style.display = 'block';
+  document.getElementById('run-btn').style.display = 'block';
+}
+
+// ─── API Fetch ────────────────────────────────────────────────────────────────
+const BASE = 'https://financialmodelingprep.com/api';
+
+async function fmpGet(path) {
+  const sep = path.includes('?') ? '&' : '?';
+  const url = `${BASE}${path}${sep}apikey=${apiKey}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`FMP API ${res.status}: ${txt.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  if (data && data['Error Message']) throw new Error(data['Error Message']);
+  if (data && data.error) throw new Error(JSON.stringify(data.error));
+  return data;
+}
+
+// ─── Live data fetch ──────────────────────────────────────────────────────────
+async function fetchAllData(ticker) {
+  const t = ticker.toUpperCase();
+
+  setStep(1, 'active');
+  // Quote (price, P/E, market cap, 52-week, beta, dividend)
+  const [quoteArr] = await Promise.all([
+    fmpGet(`/v3/quote/${t}`)
+  ]);
+  if (!quoteArr || !quoteArr.length) throw new Error(`No data found for "${t}". Check the ticker symbol.`);
+  const q = quoteArr[0];
+  setStep(1, 'done'); setStep(2, 'active');
+
+  // Key metrics + income statement + cash flow (for fundamentals)
+  const [keyMetrics, incomeArr, cashflowArr, profileArr] = await Promise.all([
+    fmpGet(`/v3/key-metrics/${t}?limit=1`),
+    fmpGet(`/v3/income-statement/${t}?limit=1`),
+    fmpGet(`/v3/cash-flow-statement/${t}?limit=1`),
+    fmpGet(`/v3/profile/${t}`),
+  ]);
+  setStep(2, 'done');
+
+  const km   = (keyMetrics  || [])[0] || {};
+  const inc  = (incomeArr   || [])[0] || {};
+  const cf   = (cashflowArr || [])[0] || {};
+  const prof = (profileArr  || [])[0] || {};
+
+  // Normalise into a single data object
+  return {
+    ticker: t,
+    shortName:   q.name || prof.companyName || t,
+    exchange:    q.exchange || prof.exchangeShortName || '',
+    sector:      prof.sector || '',
+    currentPrice: q.price,
+    previousClose:q.previousClose,
+    change:       q.change,
+    changePct:    q.changesPercentage,
+    fiftyTwoWeekHigh: q.yearHigh,
+    fiftyTwoWeekLow:  q.yearLow,
+    marketCap:    q.marketCap || prof.mktCap,
+    pe:           q.pe,
+    eps:          q.eps,
+    sharesOut:    q.sharesOutstanding || prof.volAvg,
+    beta:         prof.beta || km.beta || 1.2,
+    dividendRate: prof.lastDiv || km.dividendYield ? km.dividendYield * q.price : 0,
+    dividendYield:prof.lastDiv ? (prof.lastDiv / q.price) : (km.dividendYield || 0),
+    // Income statement
+    revenue:      inc.revenue,
+    netIncome:    inc.netIncome,
+    ebitda:       inc.ebitda,
+    grossProfit:  inc.grossProfit,
+    operatingIncome: inc.operatingIncome,
+    // Cash flow
+    freeCashFlow: cf.freeCashFlow,
+    capEx:        cf.capitalExpenditure,
+    // Key metrics
+    evToEbitda:   km.enterpriseValueOverEBITDA || (q.marketCap / (inc.ebitda || 1)),
+    roe:          km.roe || (inc.netIncome / (q.marketCap * 0.5)),
+    roa:          km.roa,
+    netMargin:    km.netProfitMargin || (inc.netIncome / (inc.revenue || 1)),
+    grossMargin:  inc.grossProfit && inc.revenue ? inc.grossProfit / inc.revenue : km.grossProfitMargin,
+    opMargin:     inc.operatingIncome && inc.revenue ? inc.operatingIncome / inc.revenue : null,
+    totalDebt:    km.debtToEquity ? km.debtToEquity * (q.marketCap / 2) : 0,
+    totalCash:    cf.cashAtEndOfPeriod || 0,
+    ev:           km.enterpriseValue || q.marketCap,
+    revenueGrowth: km.revenueGrowth || 0.07,
+    forwardPE:    km.priceToSalesRatio ? null : q.pe, // best proxy available
+    priceToBook:  km.pbRatio || km.priceToBookRatio,
+  };
+}
+
+// ─── Model engines ────────────────────────────────────────────────────────────
+function runDCF(d) {
+  const fcf  = d.freeCashFlow;
+  if (!fcf || fcf <= 0) return { error: 'DCF requires positive Free Cash Flow. This company currently has negative FCF — try EV/EBITDA or P/E instead.' };
+  const wacc  = 0.042 + (d.beta || 1.2) * 0.05;
+  const g1    = Math.min(Math.max((d.revenueGrowth || 0.07) * 0.65, 0.03), 0.28);
+  const gTerm = 0.03;
+  let pvFCF = 0;
+  for (let y = 1; y <= 10; y++) {
+    const r = y <= 5 ? g1 : (g1 + gTerm) / 2;
+    pvFCF += fcf * Math.pow(1 + r, y) / Math.pow(1 + wacc, y);
+  }
+  const termFCF = fcf * Math.pow(1 + g1, 10) * (1 + gTerm);
+  const pvTV    = termFCF / (wacc - gTerm) / Math.pow(1 + wacc, 10);
+  const ev      = pvFCF + pvTV;
+  const shares  = d.marketCap / d.currentPrice;
+  const base    = (ev + (d.totalCash || 0) - (d.totalDebt || 0)) / shares;
+  return {
+    bear: base * 0.70, base, bull: base * 1.38,
+    steps: [
+      { label:'WACC',                 val: fmt('%', wacc*100, 1),  note: `4.2% risk-free + ${(d.beta||1.2).toFixed(2)}β × 5% ERP` },
+      { label:'FCF growth (yr 1-5)',  val: fmt('%', g1*100, 1),    note: 'Derived from revenue growth, max 28%' },
+      { label:'FCF growth (yr 6-10)', val: fmt('%', (g1+gTerm)/2*100, 1), note: 'Blended rate tapering to terminal' },
+      { label:'Terminal growth',       val: '3.0%',                note: 'Long-run nominal GDP proxy' },
+      { label:'PV of FCF (10yr)',      val: '$'+fmtB(pvFCF),       note: 'Discounted at WACC' },
+      { label:'PV of terminal value',  val: '$'+fmtB(pvTV),        note: 'Gordon growth model, discounted back' },
+      { label:'Enterprise value',      val: '$'+fmtB(ev),          note: 'PV FCF + PV terminal value' },
+      { label:'Implied equity / share',val: '$'+base.toFixed(2),   note: '(EV + Cash − Debt) ÷ shares outstanding' },
+    ]
+  };
+}
+
+function runDDM(d) {
+  const div = d.dividendRate || 0;
+  if (!div || div < 0.01) return { error: 'This stock pays no dividend — DDM is not applicable. Try DCF or P/E instead.' };
+  const ke  = 0.042 + (d.beta || 1.0) * 0.05;
+  const roe = d.roe || 0.15;
+  const pay = Math.min(div / Math.max(d.eps || div, 0.01), 0.92);
+  const g   = Math.min(roe * (1 - pay), ke - 0.015);
+  const base = div * (1 + g) / (ke - g);
+  return {
+    bear: base * 0.78, base, bull: base * 1.28,
+    steps: [
+      { label:'Current annual dividend',val:'$'+div.toFixed(2),           note:'D0 — most recent annual payment' },
+      { label:'Payout ratio',           val:fmt('%', pay*100, 1),          note:'Dividend ÷ EPS' },
+      { label:'Sustainable growth (g)', val:fmt('%', g*100, 1),            note:'ROE × (1 − payout ratio)' },
+      { label:'Cost of equity (Ke)',    val:fmt('%', ke*100, 1),           note:`CAPM: 4.2% + ${(d.beta||1).toFixed(2)}β × 5%` },
+      { label:'D1 (next dividend)',      val:'$'+(div*(1+g)).toFixed(2),   note:'D0 × (1+g)' },
+      { label:'Gordon Growth value',    val:'$'+base.toFixed(2),           note:'D1 ÷ (Ke − g)' },
+    ]
+  };
+}
+
+function runEVEBITDA(d) {
+  const ebitda = d.ebitda;
+  if (!ebitda || ebitda <= 0) return { error: 'Positive EBITDA required for this model. Try P/E or DCF instead.' };
+  const curMult = d.ev / ebitda;
+  const peerMult = Math.max(curMult * 0.82, 5);
+  const implEV  = peerMult * ebitda;
+  const shares  = d.marketCap / d.currentPrice;
+  const base    = (implEV + (d.totalCash || 0) - (d.totalDebt || 0)) / shares;
+  return {
+    bear: base * 0.75, base, bull: base * 1.30,
+    steps: [
+      { label:'EBITDA (TTM)',          val:'$'+fmtB(ebitda),             note:'Trailing twelve months' },
+      { label:'Current EV',            val:'$'+fmtB(d.ev),              note:'Enterprise value' },
+      { label:'Current EV/EBITDA',     val:curMult.toFixed(1)+'x',      note:'Market-implied multiple' },
+      { label:'Peer / target multiple',val:peerMult.toFixed(1)+'x',     note:'18% discount to current (mean reversion)' },
+      { label:'Implied EV',            val:'$'+fmtB(implEV),            note:'Target multiple × EBITDA' },
+      { label:'Implied equity / share',val:'$'+base.toFixed(2),         note:'(Impl. EV + Cash − Debt) ÷ shares' },
+    ]
+  };
+}
+
+function runPE(d) {
+  if (!d.pe || !d.eps) return { error: 'Trailing P/E and EPS required. Unavailable for this ticker — try DCF or EV/EBITDA instead.' };
+  if (d.eps <= 0) return { error: 'P/E model requires positive EPS (company must be profitable). Try DCF or EV/EBITDA instead.' };
+  const fair = d.pe * 0.82;
+  const base = fair * d.eps;
+  return {
+    bear: fair * 0.78 * d.eps, base, bull: fair * 1.22 * d.eps,
+    steps: [
+      { label:'Trailing EPS',         val:'$'+d.eps.toFixed(2),      note:'Earnings per share — last 12 months' },
+      { label:'Current P/E',          val:d.pe.toFixed(1)+'x',       note:'Market price ÷ EPS' },
+      { label:'Fair-value P/E',       val:fair.toFixed(1)+'x',       note:'18% discount to current (sector normalisation)' },
+      { label:'Implied price (base)', val:'$'+base.toFixed(2),       note:'Fair P/E × trailing EPS' },
+    ]
+  };
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function fmtB(n) {
+  if (n == null || isNaN(n)) return 'N/A';
+  if (Math.abs(n) >= 1e12) return (n/1e12).toFixed(2)+'T';
+  if (Math.abs(n) >= 1e9)  return (n/1e9).toFixed(2)+'B';
+  if (Math.abs(n) >= 1e6)  return (n/1e6).toFixed(1)+'M';
+  return n.toFixed(0);
+}
+function fmt(type, n, dp=2) {
+  if (n == null || isNaN(n)) return 'N/A';
+  if (type === '%') return n.toFixed(dp)+'%';
+  if (type === '$') return '$'+n.toFixed(dp);
+  return n.toFixed(dp);
+}
+function pct(n)  { return n == null ? 'N/A' : (n*100).toFixed(1)+'%'; }
+function usd(n)  { return n == null ? 'N/A' : '$'+fmtB(n); }
+function updown(base, price) {
+  const d = (base - price) / price * 100;
+  return { pct: Math.abs(d).toFixed(1), pos: d >= 0 };
+}
+
+// ─── Step indicators ─────────────────────────────────────────────────────────
+function setStep(n, state) {
+  const el = document.getElementById(`step-${n}`);
+  if (!el) return;
+  el.className = 'step ' + state;
+}
+function resetSteps() {
+  [1,2,3,4].forEach(n => setStep(n, ''));
+}
+
+// ─── Main run ─────────────────────────────────────────────────────────────────
+async function runAnalysis() {
+  const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
+  if (!ticker || !selectedModel || !apiKey) return;
+
+  // UI: hide results/error, show loading
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('run-btn').disabled = true;
+  resetSteps();
+
+  const modelNames = { dcf:'Discounted Cash Flow (DCF)', ddm:'Dividend Discount Model (DDM)', ev_ebitda:'EV/EBITDA Multiple', pe:'P/E Relative Valuation' };
+
+  try {
+    document.getElementById('loading-text').textContent = `Fetching live data for ${ticker}…`;
+    document.getElementById('loading-sub').textContent  = 'Connecting to Financial Modeling Prep';
+
+    const data = await fetchAllData(ticker);
+
+    setStep(3, 'active');
+    document.getElementById('loading-text').textContent = `Running ${modelNames[selectedModel]}…`;
+    document.getElementById('loading-sub').textContent  = 'Computing valuation';
+
+    let res;
+    if (selectedModel === 'dcf')       res = runDCF(data);
+    else if (selectedModel === 'ddm')  res = runDDM(data);
+    else if (selectedModel === 'ev_ebitda') res = runEVEBITDA(data);
+    else                               res = runPE(data);
+
+    setStep(3, 'done'); setStep(4, 'active');
+
+    document.getElementById('loading').style.display = 'none';
+    renderResult(data, res, modelNames[selectedModel]);
+    setStep(4, 'done');
+
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-box').style.display = 'block';
+    document.getElementById('error-text').textContent = e.message || 'Unknown error';
+  } finally {
+    document.getElementById('run-btn').disabled = false;
+    checkRunnable();
+  }
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderResult(d, res, modelName) {
+  const ticker = d.ticker;
+
+  // Data source
+  document.getElementById('data-dot').className = 'data-dot live';
+  document.getElementById('data-source-label').textContent = 'LIVE DATA · Financial Modeling Prep · ' + new Date().toLocaleTimeString();
+
+  // Header
+  document.getElementById('result-model-label').textContent = `${modelName} · ${ticker}`;
+  document.getElementById('result-company').textContent = d.shortName;
+  const sub = [];
+  if (d.exchange) sub.push(d.exchange);
+  if (d.sector)   sub.push(d.sector);
+  if (d.fiftyTwoWeekLow && d.fiftyTwoWeekHigh) sub.push(`52-wk: $${d.fiftyTwoWeekLow.toFixed(2)} – $${d.fiftyTwoWeekHigh.toFixed(2)}`);
+  document.getElementById('result-sub').textContent = sub.join(' · ');
+
+  // Error case (e.g. DDM on non-dividend stock)
+  if (res.error) {
+    document.getElementById('verdict-card').style.display = 'none';
+    document.querySelector('.bbb').style.display = 'none';
+    document.getElementById('steps-table').innerHTML = `<div style="padding:1rem;color:rgba(200,185,122,.6);font-size:.72rem;line-height:1.7">⚠ ${res.error}</div>`;
+    document.getElementById('metrics-grid').innerHTML = '';
+  } else {
+    document.getElementById('verdict-card').style.display = '';
+    document.querySelector('.bbb').style.display = '';
+
+    // Verdict
+    const ud = updown(res.base, d.currentPrice);
+    const vc = document.getElementById('verdict-card');
+    vc.className = 'verdict ' + (ud.pos ? 'up' : 'down');
+    document.getElementById('verdict-price').textContent = '$' + res.base.toFixed(2);
+    document.getElementById('verdict-vs').textContent    = `vs Current $${d.currentPrice.toFixed(2)}`;
+    document.getElementById('verdict-move').textContent  = `${ud.pos ? '▲' : '▼'} ${ud.pct}% ${ud.pos ? 'upside' : 'downside'}`;
+    document.getElementById('verdict-tag').textContent   = ud.pos ? 'Potentially undervalued' : 'Potentially overvalued';
+
+    // Bear/Base/Bull
+    const pctStr = (v) => ((v - d.currentPrice)/d.currentPrice*100).toFixed(1)+'%';
+    document.getElementById('bbb-bear').textContent     = '$'+res.bear.toFixed(2);
+    document.getElementById('bbb-bear-pct').textContent = pctStr(res.bear);
+    document.getElementById('bbb-base').textContent     = '$'+res.base.toFixed(2);
+    document.getElementById('bbb-base-pct').textContent = pctStr(res.base);
+    document.getElementById('bbb-bull').textContent     = '$'+res.bull.toFixed(2);
+    document.getElementById('bbb-bull-pct').textContent = pctStr(res.bull);
+
+    // Steps
+    const tbl = document.getElementById('steps-table');
+    tbl.innerHTML = res.steps.map((s, i) => `
+      <div class="step-row slide" style="animation-delay:${i*.05}s">
+        <div class="step-lhs">
+          <div class="step-name">${s.label}</div>
+          <div class="step-note">${s.note}</div>
+        </div>
+        <div class="step-val">${s.val}</div>
+      </div>
+    `).join('');
+  }
+
+  // Metrics grid (always shown)
+  const metrics = [
+    ['Price',    '$' + (d.currentPrice?.toFixed(2) || 'N/A')],
+    ['Change',   d.changePct != null ? (d.changePct >= 0 ? '+' : '') + d.changePct.toFixed(2) + '%' : 'N/A'],
+    ['EPS',      d.eps != null ? '$'+d.eps.toFixed(2) : 'N/A'],
+    ['P/E',      d.pe != null && d.pe > 0 ? d.pe.toFixed(1)+'x' : 'N/A'],
+    ['Mkt Cap',  usd(d.marketCap)],
+    ['Beta',     d.beta?.toFixed(2) || 'N/A'],
+    ['FCF',      usd(d.freeCashFlow)],
+    ['EBITDA',   usd(d.ebitda)],
+    ['Revenue',  usd(d.revenue)],
+    ['Net Margin',pct(d.netMargin)],
+    ['ROE',      pct(d.roe)],
+    ['Div Yield',pct(d.dividendYield)],
+  ];
+  document.getElementById('metrics-grid').innerHTML = metrics.map(([k,v]) => `
+    <div class="metric-card">
+      <div class="metric-label">${k}</div>
+      <div class="metric-val">${v}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>
