@@ -585,17 +585,7 @@ async function run(){
     const data = await fetchAll(sym);
 
     // ── DEBUG: log derived data ──────────────────────────────────────────────
-    const _dbgLines = [
-      `=== FINNHUB DATA: ${sym} ===`,
-      `price: ${data.price}  |  mcap: ${data.mcap}  |  shares: ${data.shares}`,
-      `revenue: ${data.revenue}  |  ebitda: ${data.ebitda}  |  netIncome: ${data.netIncome}`,
-      `fcf: ${data.fcf}  |  fcfIsProxy: ${data.fcfIsProxy}`,
-      `pe: ${data.pe}  |  eps: ${data.eps}  |  beta: ${data.beta}`,
-      `roe: ${data.roe}  |  opMargin: ${data.opMargin}  |  netMargin: ${data.netMargin}`,
-      `revGr: ${data.revGr}  |  ev: ${data.ev}`,
-      `divRate: ${data.divRate}  |  divYield: ${data.divYield}`,
-      `totalDebt: ${data.totalDebt}  |  totalCash: ${data.totalCash}`,
-    ];
+
     console.log(_dbgLines.join('\n'));
     const _dbgEl = $('dbg');
     _dbgEl.textContent = _dbgLines.join('\n');
