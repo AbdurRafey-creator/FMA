@@ -255,8 +255,7 @@ h1 em{font-style:normal;background:linear-gradient(90deg,var(--gold),#a08040);-w
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 // ── API KEYS ──────────────────────────────────────────────────────────────────
 // Finnhub  — free key at https://finnhub.io (60 calls/min, no credit card)
-const FH_KEY  = 'd845nt9r01qkm5caahggd845nt9r01qkm5caahh0';
-const FH_BASE = 'https://finnhub.io/api/v1';
+const API_BASE = https://fma.abdurrafey88.workers.dev;
 
 const MNAMES = {
   dcf:'Discounted Cash Flow (DCF)',
@@ -296,12 +295,13 @@ function rsteps(){ [1,2,3,4].forEach(n=>step(n,'')); }
 
 // ─── Finnhub GET ──────────────────────────────────────────────────────────────
 async function fhget(path){
-  const sep = path.includes('?') ? '&' : '?';
-  const r   = await fetch(`${FH_BASE}${path}${sep}token=${FH_KEY}`);
+  const r = await fetch(`${API_BASE}/?path=${encodeURIComponent(path)}`);
   const txt = await r.text();
-  if(!r.ok) throw new Error(`Finnhub ${r.status} on ${path.split('?')[0]}: ${txt.slice(0,200)}`);
+
+  if(!r.ok) throw new Error(`Finnhub proxy error: ${txt.slice(0,200)}`);
+
   try{ return JSON.parse(txt); }
-  catch(e){ throw new Error(`Bad JSON from Finnhub: ${txt.slice(0,100)}`); }
+  catch(e){ throw new Error(`Bad JSON from proxy: ${txt.slice(0,100)}`); }
 }
 
 // ─── Fetch all data (Finnhub free tier) ───────────────────────────────────────
